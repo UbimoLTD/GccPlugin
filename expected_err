@@ -1,0 +1,16 @@
+test.cpp:3:44: warning: ‘warn_unused_result’ attribute only applies to function types [-Wattributes]
+ struct __attribute__((warn_unused_result)) A;
+                                            ^
+test.cpp: In function ‘int main()’:
+test.cpp:27:5: warning: variable ‘moshe’ set but not used [-Wunused-but-set-variable]
+   A moshe = f();
+     ^
+test.cpp:28:6: warning: unused variable ‘moshe2’ [-Wunused-variable]
+   A *moshe2 = g();
+      ^
+test.cpp:26:6: warning: ignoring return value of ‘A* g()’, declared with attribute warn_unused_result [-Wunused-result]
+   g();
+      ^
+test.cpp:25:6: warning: ignoring return value of ‘A f()’, declared with attribute ubimo_warn_unused_result [-Wunused-result]
+   f();
+      ^

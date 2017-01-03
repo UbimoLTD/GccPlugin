@@ -4,7 +4,7 @@
 
 // ORI: To test this, run the following lines
 //      g++ warn_unused.cc  -I/usr/lib/gcc/x86_64-linux-gnu/4.8/plugin/include -std=gnu++11 -Wno-literal-suffix -shared -o warn_unused.so -fPIC -o warn_unused.so
-//      g++ test.cc -fplugin=./warn_unused.so  -Wall -std=c++11
+//      ./test
 
 #include <iostream>
 #include <cassert>
@@ -48,8 +48,8 @@ int plugin_is_GPL_compatible;
 
 static struct plugin_info my_gcc_plugin_info = { "1.0", "This plugin emits warn_unused_result for C++" };
 
-static struct attribute_spec my_attr = 
-  {"warn_unused_result_type", 0, 0, false, true, false, nullptr, false};
+static struct attribute_spec my_attr =
+  {"ubimo_warn_unused_result_type", 0, 0, false, true, false, nullptr, false};
 
 static void warn_unused_result_lhs(const std::set<tree>& unused_lhs, function *fun)
 {
@@ -60,7 +60,6 @@ static void warn_unused_result_lhs(const std::set<tree>& unused_lhs, function *f
     for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
     {
       gimple stmt = gsi_stmt (gsi);
-
       switch (gimple_code(stmt))
       {
         case GIMPLE_CALL:
@@ -70,21 +69,20 @@ static void warn_unused_result_lhs(const std::set<tree>& unused_lhs, function *f
             {
               // Deliberately similar to the code in tree-cfg.c
               tree fdecl = gimple_call_fndecl (stmt);
-              tree ftype = gimple_call_fntype (stmt);
-
-              if (lookup_attribute ("warn_unused_result", TYPE_ATTRIBUTES (ftype)))
+              tree ret_type = TREE_TYPE(lhs);
+              if (lookup_attribute ("ubimo_warn_unused_result_type", TYPE_ATTRIBUTES (ret_type)))
               {
                 location_t loc = gimple_location (stmt);
 
                 if (fdecl)
                   warning_at (loc, OPT_Wunused_result,
                       "ignoring return value of %qD, "
-                      "declared with attribute warn_unused_result",
+                      "declared with attribute ubimo_warn_unused_result",
                       fdecl);
                 else
                   warning_at (loc, OPT_Wunused_result,
                       "ignoring return value of function "
-                      "declared with attribute warn_unused_result");
+                      "declared with attribute ubimo_warn_unused_result");
               }
             }
             break;
@@ -127,7 +125,7 @@ static void erase_if_used_lhs(std::set<tree>& potential_unused_lhs,
 static std::set<tree> gather_unused_lhs(function* fun)
 {
   std::set<tree> potential_unused_lhs;
-  
+
   basic_block bb;
   FOR_ALL_BB_FN(bb, fun)
   {
@@ -135,7 +133,7 @@ static std::set<tree> gather_unused_lhs(function* fun)
     for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
     {
       gimple stmt = gsi_stmt (gsi);
-      
+
       switch (gimple_code(stmt))
       {
       case GIMPLE_CALL:
@@ -143,7 +141,7 @@ static std::set<tree> gather_unused_lhs(function* fun)
         tree lhs = gimple_call_lhs(stmt);
         if (lhs && TREE_CODE(lhs) == VAR_DECL && DECL_ARTIFICIAL(lhs))
           potential_unused_lhs.insert(lhs);
-        
+
         unsigned nargs = gimple_call_num_args(stmt);
         for (unsigned i = 0; i < nargs; i++)
         {
@@ -155,23 +153,23 @@ static std::set<tree> gather_unused_lhs(function* fun)
       }
       case GIMPLE_ASSIGN:
       {
-        if (gimple_clobber_p(stmt)) 
+        if (gimple_clobber_p(stmt))
           continue;
-        
+
         tree lhs = gimple_assign_lhs(stmt);
         erase_if_used_lhs(potential_unused_lhs, lhs);
-        
+
         tree rhs1 = gimple_assign_rhs1(stmt);
         erase_if_used_lhs(potential_unused_lhs, rhs1);
-        
+
         tree rhs2 = gimple_assign_rhs2(stmt);
         if (rhs2 != NULL)
           erase_if_used_lhs(potential_unused_lhs, rhs2);
-        
+
         tree rhs3 = gimple_assign_rhs3(stmt);
         if (rhs3 != NULL)
           erase_if_used_lhs(potential_unused_lhs, rhs3);
-        
+
         break;
       }
       break;
@@ -198,7 +196,7 @@ int dummy_124397ydk = ([] {
     myplugin_pass.pass.type = GIMPLE_PASS;
     myplugin_pass.pass.name = "warn_unused";
     myplugin_pass.pass.gate = [] { return true; };
-    myplugin_pass.pass.execute = [] { 
+    myplugin_pass.pass.execute = [] {
       std::set<tree> unused_lhs = gather_unused_lhs(cfun);
       warn_unused_result_lhs(unused_lhs, cfun);
       return 0U;
@@ -211,7 +209,7 @@ int dummy_124397ydk = ([] {
 #if __GNUC__ >= 5
 namespace
 {
-const pass_data warn_unused_result_cxx_data = 
+const pass_data warn_unused_result_cxx_data =
 {
   GIMPLE_PASS,
   "warn_unused_result_cxx", /* name */
@@ -277,10 +275,9 @@ int plugin_init (struct plugin_name_args *plugin_info,
   pass_info.ref_pass_instance_number = 1;
   pass_info.pos_op = PASS_POS_INSERT_AFTER;
 
-  register_callback (plugin_info->base_name, PLUGIN_ATTRIBUTES, 
+  register_callback (plugin_info->base_name, PLUGIN_ATTRIBUTES,
                      [](void *, void *) { register_attribute(&my_attr); }, nullptr);
   register_callback (plugin_info->base_name, PLUGIN_PASS_MANAGER_SETUP, nullptr, &pass_info);
 
   return 0;
 }
-

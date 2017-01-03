@@ -1,0 +1,2 @@
+g++ test.cpp -fplugin=./warn_unused.so -Wall -std=c++11 2>err 1>err
+cmp err expected_err
