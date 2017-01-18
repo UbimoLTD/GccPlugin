@@ -22,6 +22,7 @@
 #include "function.h"
 #include "gimple.h"
 #include "plugin.h"
+#include "gimple-pretty-print.h"
 #if __GNUC__ >= 5
 #include "context.h"
 #include "internal-fn.h"
@@ -65,6 +66,7 @@ static void warn_unused_result_lhs(const std::set<tree>& unused_lhs, function *f
         case GIMPLE_CALL:
           {
             tree lhs = gimple_call_lhs(stmt);
+            //fprintf(stderr, "ORIDEBUG: Checking %p\n", lhs);
             if (unused_lhs.find(lhs) != unused_lhs.end())
             {
               // Deliberately similar to the code in tree-cfg.c
@@ -72,6 +74,7 @@ static void warn_unused_result_lhs(const std::set<tree>& unused_lhs, function *f
               tree ret_type = TREE_TYPE(lhs);
               if (lookup_attribute ("ubimo_warn_unused_result_type", TYPE_ATTRIBUTES (ret_type)))
               {
+                //fprintf(stderr, "ORIDEBUG: attrib found\n");
                 location_t loc = gimple_location (stmt);
 
                 if (fdecl)
@@ -83,6 +86,8 @@ static void warn_unused_result_lhs(const std::set<tree>& unused_lhs, function *f
                   warning_at (loc, OPT_Wunused_result,
                       "ignoring return value of function "
                       "declared with attribute ubimo_warn_unused_result");
+              } else {
+                //fprintf(stderr, "ORIDEBUG: No attrib found\n");
               }
             }
             break;
@@ -105,6 +110,7 @@ static void erase_if_used_lhs(std::set<tree>& potential_unused_lhs,
   switch (TREE_CODE(t))
   {
     case VAR_DECL:
+      //fprintf(stderr, "ORIDEBUG: Removing var %p\n", t);
       if (DECL_ARTIFICIAL(t)
           && potential_unused_lhs.find(t) != potential_unused_lhs.end())
       {
@@ -112,6 +118,7 @@ static void erase_if_used_lhs(std::set<tree>& potential_unused_lhs,
       }
       break;
     case COMPONENT_REF:
+    case ADDR_EXPR:
       erase_if_used_lhs(potential_unused_lhs, TREE_OPERAND(t, 0));
       break;
     default:
@@ -133,20 +140,23 @@ static std::set<tree> gather_unused_lhs(function* fun)
     for (gsi = gsi_start_bb (bb); !gsi_end_p (gsi); gsi_next (&gsi))
     {
       gimple stmt = gsi_stmt (gsi);
+      //debug_gimple_stmt(stmt);
 
       switch (gimple_code(stmt))
       {
       case GIMPLE_CALL:
       {
         tree lhs = gimple_call_lhs(stmt);
-        if (lhs && TREE_CODE(lhs) == VAR_DECL && DECL_ARTIFICIAL(lhs))
+        if (lhs && TREE_CODE(lhs) == VAR_DECL && DECL_ARTIFICIAL(lhs)) {
+          //fprintf(stderr, "ORIDEBUG: Inserting %p\n", lhs);
           potential_unused_lhs.insert(lhs);
-
+        }
         unsigned nargs = gimple_call_num_args(stmt);
-        for (unsigned i = 0; i < nargs; i++)
-        {
-          tree arg = gimple_call_arg(stmt, i);
-          erase_if_used_lhs(potential_unused_lhs, arg);
+        if (!gimple_call_fndecl(stmt) || !DECL_DESTRUCTOR_P(gimple_call_fndecl(stmt))) {
+          for (unsigned i = 0; i < nargs; i++) {
+            tree arg = gimple_call_arg(stmt, i);
+            erase_if_used_lhs(potential_unused_lhs, arg);
+          }
         }
         break;
 

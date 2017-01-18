@@ -19,6 +19,16 @@ A* g()  {
   return new A(1,2,3,4);
 }
 
+B h() __attribute__((warn_unused_result));
+B h() {
+  return B(1);
+}
+
+__attribute__((warn_unused_result)) B *i();
+B* i()  {
+  return new B(1);
+}
+
 extern A x;
 
 int main() {
@@ -26,4 +36,8 @@ int main() {
   g();
   A moshe = f();
   A *moshe2 = g();
+  h();
+  i();
+  B moshe3 = h();
+  B *moshe4 = i();
 }
