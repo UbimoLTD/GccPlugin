@@ -20,6 +20,10 @@
 #include "tree-pass.h"
 #include "basic-block.h"
 #include "function.h"
+#if __GNUC__ >= 5
+#include "tree-ssa-alias.h"
+#include "gimple-expr.h"
+#endif
 #include "gimple.h"
 #include "plugin.h"
 #include "gimple-pretty-print.h"
@@ -28,19 +32,17 @@
 #include "internal-fn.h"
 #include "predict.h"
 #include "tree.h"
-#include "tree-ssa-alias.h"
-#include "gimple-expr.h"
-#include "gimple-ssa.h"
+// #include "gimple-ssa.h"
 #include "tree-pretty-print.h"
 #include "tree-ssa-operands.h"
-#include "tree-phinodes.h"
+//#include "tree-phinodes.h"
 #include "gimple-pretty-print.h"
 #include "gimple-iterator.h"
-#include "gimple-walk.h"
+//#include "gimple-walk.h"
 #include "diagnostic.h"
 #include "stringpool.h"
 
-#include "ssa-iterators.h"
+//#include "ssa-iterators.h"
 #endif
 
 
@@ -186,7 +188,11 @@ static std::set<tree> gather_unused_lhs(function* fun)
       case GIMPLE_RETURN:
       {
         erase_if_used_lhs(potential_unused_lhs,
+#if __GNUC__ >= 5
+			  gimple_return_retval(as_a<greturn*>(stmt)));
+#else			  
                           gimple_return_retval(stmt));
+#endif
         break;
       }
       default:
@@ -200,7 +206,7 @@ static std::set<tree> gather_unused_lhs(function* fun)
   return unused_lhs;
 }
 
-#if __GNUC__ >= 4
+#if __GNUC__ < 5
 static struct gimple_opt_pass myplugin_pass;
 int dummy_124397ydk = ([] {
     myplugin_pass.pass.type = GIMPLE_PASS;
@@ -213,7 +219,6 @@ int dummy_124397ydk = ([] {
     };
     return 0;
   })();
-
 #endif
 
 #if __GNUC__ >= 5
@@ -247,12 +252,6 @@ struct warn_unused_result_cxx : gimple_opt_pass
 
     return 0;
   }
-
-  virtual warn_unused_result_cxx* clone() override
-  {
-    // We do not clone ourselves
-    return this;
-  }
 };
 }
 #endif
@@ -276,7 +275,7 @@ int plugin_init (struct plugin_name_args *plugin_info,
   // Register the phase right after cfg
   struct register_pass_info pass_info;
 
-#if __GNUC__ >= 4
+#if __GNUC__ < 5
   pass_info.pass = &myplugin_pass.pass;
 #else
   pass_info.pass = new warn_unused_result_cxx(g);
