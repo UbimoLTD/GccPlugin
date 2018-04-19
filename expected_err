@@ -1,25 +1,25 @@
-test.cpp:3:44: warning: ‘warn_unused_result’ attribute only applies to function types [-Wattributes]
+test.cpp:3:44: warning: 'warn_unused_result' attribute only applies to function types [-Wattributes]
  struct __attribute__((warn_unused_result)) A;
                                             ^
-test.cpp: In function ‘int main()’:
-test.cpp:37:5: warning: variable ‘moshe’ set but not used [-Wunused-but-set-variable]
+test.cpp: In function 'int main()':
+test.cpp:37:5: warning: variable 'moshe' set but not used [-Wunused-but-set-variable]
    A moshe = f();
      ^
-test.cpp:38:6: warning: unused variable ‘moshe2’ [-Wunused-variable]
+test.cpp:38:6: warning: unused variable 'moshe2' [-Wunused-variable]
    A *moshe2 = g();
       ^
-test.cpp:42:6: warning: unused variable ‘moshe4’ [-Wunused-variable]
+test.cpp:42:6: warning: unused variable 'moshe4' [-Wunused-variable]
    B *moshe4 = i();
       ^
-test.cpp:36:6: warning: ignoring return value of ‘A* g()’, declared with attribute warn_unused_result [-Wunused-result]
+test.cpp:36:6: warning: ignoring return value of 'A* g()', declared with attribute warn_unused_result [-Wunused-result]
    g();
       ^
-test.cpp:40:6: warning: ignoring return value of ‘B* i()’, declared with attribute warn_unused_result [-Wunused-result]
+test.cpp:40:6: warning: ignoring return value of 'B* i()', declared with attribute warn_unused_result [-Wunused-result]
    i();
       ^
-test.cpp:35:6: warning: ignoring return value of ‘A f()’, declared with attribute ubimo_warn_unused_result [-Wunused-result]
+test.cpp:35:6: warning: ignoring return value of 'A f()', declared with attribute ubimo_warn_unused_result [-Wunused-result]
    f();
       ^
-test.cpp:39:6: warning: ignoring return value of ‘B h()’, declared with attribute ubimo_warn_unused_result [-Wunused-result]
+test.cpp:39:6: warning: ignoring return value of 'B h()', declared with attribute ubimo_warn_unused_result [-Wunused-result]
    h();
       ^
